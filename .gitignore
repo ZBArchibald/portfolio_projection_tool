@@ -17,3 +17,6 @@ SimulatedTrajectories.txt
 # OS files
 .DS_Store
 Thumbs.db
+
+# Generated plots
+plots/

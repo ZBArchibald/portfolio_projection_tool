@@ -4,6 +4,8 @@ A Java Monte Carlo simulator that models a portfolio of stocks as a system of **
 
 The repository includes one year (250 trading days) of daily closing prices for six tech stocks: AAPL, AMD, GOOG, INTC, MSFT and NVDA.
 
+![Ten simulated price paths (blue) against the actual price (orange) for each of the six sample stocks](docs/example_plots.png)
+
 ## How it works
 
 1. **Load prices.** `StockData.txt` is parsed into one price series per stock.
@@ -28,21 +30,25 @@ $$
 ├── lib/
 │   └── Jama-1.0.3.jar
 ├── src/financeproject2/
-│   ├── ProjectTwoDriver.java
+│   ├── Main.java
 │   ├── GatherDriftsAndVolatilities.java
 │   ├── CovolatilityMatrixCalculator.java
 │   ├── SDESystem.java
-│   └── NumericalSDESolution.java
+│   ├── NumericalSDESolution.java
+│   └── TrajectoryPlotter.java
+├── docs/
+│   └── example_plots.png
 └── StockData.txt
 ```
 
 | File | Purpose |
 | --- | --- |
-| `ProjectTwoDriver.java` | Entry point. Loads data, runs the pipeline and writes the output. |
+| `Main.java` | Entry point. Loads data, runs the pipeline and writes the output. |
 | `GatherDriftsAndVolatilities.java` | Computes log returns and annualized drift and volatility. |
 | `CovolatilityMatrixCalculator.java` | Builds the annualized covariance matrix across all stocks. |
 | `SDESystem.java` | Holds the SDE parameters and computes the matrix square root. |
 | `NumericalSDESolution.java` | Runs one Euler–Maruyama simulation of every stock. |
+| `TrajectoryPlotter.java` | Draws the simulated paths against the actual prices as PNG charts, using only the Java standard library. |
 | `lib/Jama-1.0.3.jar` | [JAMA](https://math.nist.gov/javanumerics/jama/), a public-domain matrix library from NIST, bundled so the project builds with no extra downloads. |
 | `StockData.txt` | Sample input: 250 daily closing prices for six stocks. |
 
@@ -59,10 +65,10 @@ From the project root:
 javac -cp lib/Jama-1.0.3.jar -d out src/financeproject2/*.java
 
 # Run (macOS / Linux)
-java -cp "out:lib/Jama-1.0.3.jar" financeproject2.ProjectTwoDriver
+java -cp "out:lib/Jama-1.0.3.jar" financeproject2.Main
 
 # Run (Windows: use ; instead of : as the classpath separator)
-java -cp "out;lib/Jama-1.0.3.jar" financeproject2.ProjectTwoDriver
+java -cp "out;lib/Jama-1.0.3.jar" financeproject2.Main
 ```
 
 Run the program from the directory that contains `StockData.txt`, because the file is read by relative path.
@@ -78,12 +84,18 @@ Run the program from the directory that contains `StockData.txt`, because the fi
 **`SimulatedTrajectories.txt`.** For each stock, the program writes 10 independent simulated paths followed by the real historical prices, one row per day:
 
 ```
-Stock 0
+AAPL
 <sim 1>  <sim 2>  ...  <sim 10>  <actual price>
 ...
 ```
 
-The file is tab-separated, so you can paste it into a spreadsheet and chart the simulations against the real prices.
+The file is tab-separated, so you can paste it into a spreadsheet for further analysis.
+
+**`plots/`.** The program saves the same 10 simulations as charts:
+- `plots/<TICKER>.png`: one chart per stock, with the simulated paths in blue and the actual price in orange
+- `plots/all_stocks.png`: an overview grid of every stock, like the image at the top of this README
+
+Each run draws new random paths, so the files are overwritten every time.
 
 ## Using your own data
 
@@ -105,17 +117,18 @@ MSFT microsoft
 
 - You can include any number of securities.
 - Every security must have the **same number of daily prices**.
-- The label line is ignored by the parser, but it keeps the file readable.
+- The first word of the label line (for example `AAPL`) is used as the stock's name in the output file and plots.
 
 ## Configuration
 
-These settings are currently hard-coded in `ProjectTwoDriver.java`:
+These settings are currently hard-coded in `Main.java`:
 
 | Setting | Default | Description |
 | --- | --- | --- |
 | `upSampleFactor` | `1` | Number of simulation steps per trading day. Higher values give a finer time step. |
-| Number of trajectories | `10` | Number of paths written to `SimulatedTrajectories.txt`. |
+| Number of trajectories | `10` | Number of paths written to `SimulatedTrajectories.txt` and plotted. |
 | Input file | `StockData.txt` | Path to the price data. |
+| Plot directory | `plots` | Folder the PNG charts are written to. |
 
 ## Limitations
 

@@ -10,7 +10,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class ProjectTwoDriver 
+public class Main 
 {
 	public static void main(String[] args) throws IOException
 	{
@@ -18,7 +18,9 @@ public class ProjectTwoDriver
 		
 		File stockData = new File("StockData.txt");
 		
-		ArrayList<ArrayList<Double>> dailyPricesOfStocks = formatStockData(stockData);
+		ArrayList<String> stockNames = new ArrayList<String>();
+
+		ArrayList<ArrayList<Double>> dailyPricesOfStocks = formatStockData(stockData, stockNames);
 		
 		ArrayList<ArrayList<Double>> logReturnsOfStocks = 
 				GatherDriftsAndVolatilities.generateLogReturnsOfStocks(dailyPricesOfStocks);
@@ -33,7 +35,10 @@ public class ProjectTwoDriver
 		
 		SDESystemForStocks.printSDEComponents();
 		
-		simulateTenTrajectories(SDESystemForStocks, dailyPricesOfStocks, upSampleFactor);
+		ArrayList<ArrayList<ArrayList<Double>>> simulatedData =
+				simulateTenTrajectories(SDESystemForStocks, dailyPricesOfStocks, stockNames, upSampleFactor);
+
+		TrajectoryPlotter.savePlots(stockNames, simulatedData, dailyPricesOfStocks, upSampleFactor, new File("plots"));
 		
 		NumericalSDESolution simulation = new NumericalSDESolution(SDESystemForStocks, dailyPricesOfStocks,
 				upSampleFactor);
@@ -41,19 +46,30 @@ public class ProjectTwoDriver
 		formattedPrint(simulation.getDailyPrices(), upSampleFactor);
 	}
 
-	private static ArrayList<ArrayList<Double>> formatStockData(File stockData) throws FileNotFoundException 
+	private static ArrayList<ArrayList<Double>> formatStockData(File stockData, ArrayList<String> stockNames)
+			throws FileNotFoundException
 	{
 		ArrayList<ArrayList<Double>> dailyPricesOfStocks = new ArrayList<ArrayList<Double>>();
-		
+
 		Scanner fileScanner = new Scanner(stockData);
-		
+
+		// The first word of the line before each '{' (e.g. "AAPL apple") is used as the stock's name.
+		String lastLabel = null;
+
 		while (fileScanner.hasNextLine())
 		{
-			String currentLine = new String(fileScanner.nextLine());
-			
-			if (currentLine.length() > 0 && currentLine.charAt(0)=='{') 
+			String currentLine = fileScanner.nextLine().trim();
+
+			if (currentLine.length() > 0 && currentLine.charAt(0)=='{')
 			{
+				stockNames.add(lastLabel != null ? lastLabel : "Stock " + dailyPricesOfStocks.size());
+				lastLabel = null;
+
 				addStockToDailyPricesOfStocks(fileScanner, dailyPricesOfStocks);
+			}
+			else if (currentLine.length() > 0)
+			{
+				lastLabel = currentLine.split("\\s+")[0];
 			}
 		}
 		
@@ -92,8 +108,9 @@ public class ProjectTwoDriver
 		}
 	}
 	
-	private static void simulateTenTrajectories(SDESystem SDESystem, 
-			ArrayList<ArrayList<Double>> dailyPricesOfStocks, int upSampleFactor) throws IOException 
+	private static ArrayList<ArrayList<ArrayList<Double>>> simulateTenTrajectories(SDESystem SDESystem,
+			ArrayList<ArrayList<Double>> dailyPricesOfStocks, ArrayList<String> stockNames, int upSampleFactor)
+			throws IOException
 	{
 		BufferedWriter evilShadowSkull = new BufferedWriter(new OutputStreamWriter(
 			new FileOutputStream("SimulatedTrajectories.txt")));
@@ -112,7 +129,7 @@ public class ProjectTwoDriver
 		for(int stock = 0; stock < dailyPricesOfStocks.size(); stock++)
 		{
 			evilShadowSkull.newLine();
-			evilShadowSkull.write("Stock " + stock);
+			evilShadowSkull.write(stockNames.get(stock));
 			evilShadowSkull.newLine();
 			
 			for(int day = 0; day < dailyPricesOfStocks.get(0).size(); day++)
@@ -129,8 +146,8 @@ public class ProjectTwoDriver
 
 		}
 		evilShadowSkull.close();
-		File file = new File("SimulatedTrajectories.txt");
-		file.createNewFile();
+
+		return simulatedData;
 	}
 	
 }
