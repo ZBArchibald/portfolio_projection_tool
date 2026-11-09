@@ -12,8 +12,8 @@ The repository includes one year (250 trading days) of daily closing prices for 
 2. **Compute log returns.** For each stock, $r_t = \ln(S_{t+1} / S_t)$.
 3. **Estimate parameters.** These are annualized assuming 250 trading days per year:
    - Drift: $\hat{\mu} = 250 \cdot \overline{r}$
-   - Squared volatility: $\hat{\sigma}^2 = 250 \cdot \operatorname{Var}(r)$
-4. **Build the covolatility matrix.** The diagonal holds each stock's $\hat{\sigma}^2$. Each off-diagonal entry is the annualized covariance of log returns between a pair of stocks, $C_{ij} = 250 \cdot \operatorname{Cov}(r_i, r_j)$.
+   - Squared volatility: $\hat{\sigma}^2 = 250 \cdot \mathrm{Var}(r)$
+4. **Build the covolatility matrix.** The diagonal holds each stock's $\hat{\sigma}^2$. Each off-diagonal entry is the annualized covariance of log returns between a pair of stocks, $C_{ij} = 250 \cdot \mathrm{Cov}(r_i, r_j)$.
 5. **Take the matrix square root.** An eigenvalue decomposition $C = V D V^\top$ gives $C^{1/2} = V D^{1/2} V^\top$, which turns independent Gaussian samples into correlated shocks.
 6. **Simulate.** Prices are stepped forward with Euler–Maruyama on the SDE system
 
